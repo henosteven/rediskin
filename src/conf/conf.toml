@@ -1,0 +1,4 @@
+#host
+Host = "localhost"
+#port
+Port = 1024
