@@ -4,6 +4,7 @@ import (
     "net"
     "strconv"
     "errors"
+    "fmt"
 )
 
 type Client struct{
@@ -34,27 +35,40 @@ type Command struct {
 func GetCommand(client Client) error{
     conn := client.Conn
     argv := client.CommandArgv
-    argvFlag := argv[0][0:1]
-    argvCount, _:= strconv.Atoi(argv[0][1:2])
-    if (argvFlag != "*") {
-        conn.Write([]byte("$21\r\ninvalid-argument-flag\r\n"))
-        return errors.New("invliad-aggument-flag")
+    err := checkCommandProtocol(&client)
+    if err != nil {
+        return errors.New("command-error")
     }
-    if(argvCount != 2) {
-        conn.Write([]byte("$22\r\ninvalid-argument-count\r\n"))
-        return errors.New("invliad-aggument-count")
-    } else {
-        resp := ServerInstance.Dict[argv[4]]
-        conn.Write([]byte("$" + strconv.Itoa(len(resp)) + "\r\n" + resp + "\r\n"))
-        return nil
-    }
+    resp := ServerInstance.Dict[argv[4]]
+    conn.Write([]byte("$" + strconv.Itoa(len(resp)) + "\r\n" + resp + "\r\n"))
+    return nil
 }
 
 func SetCommand(client Client) error{
     conn := client.Conn
-    conn.Write([]byte("$10\r\nsetcommand\r\n"))
     argv := client.CommandArgv
+    conn.Write([]byte("$10\r\nsetcommand\r\n"))
+    err := checkCommandProtocol(&client)
+    if err != nil {
+        return errors.New("command-error")
+    }
     ServerInstance.Dict[argv[4]] = argv[6]
+    return nil
+}
+
+func checkCommandProtocol(client *Client) error {
+    argv := client.CommandArgv
+    argvFlag := argv[0][0:1]
+    argvCount, _:= strconv.Atoi(argv[0][1:2])
+    fmt.Println(argvCount, client.CurrentCommand, argv)
+    if (argvFlag != "*") {
+        client.Conn.Write([]byte("$21\r\ninvalid-argument-flag\r\n"))
+        return errors.New("invliad-aggument-flag")
+    }
+    if(argvCount != (client.CurrentCommand.Argc + 1 )) {
+        client.Conn.Write([]byte("$22\r\ninvalid-argument-count\r\n"))
+        return errors.New("invliad-aggument-count")
+    }
     return nil
 }
 

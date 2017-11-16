@@ -14,7 +14,7 @@ import(
 )
 
 func initServer() {
-    fp, err := os.Open("conf/conf.toml") 
+    fp, err := os.Open("../src/conf/conf.toml") 
     if err != nil {
         panic("failed to open conf file")
     }
