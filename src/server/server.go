@@ -48,7 +48,8 @@ func GetCommand(client Client) error{
 
     //类型判定
     tmpValue, ok := (resp.Value).(string)
-    if ok {
+    fmt.Println(tmpValue, ok)
+    if !ok {
         conn.Write([]byte("$12\r\ninvalid-type\r\n"))
     } else {
         conn.Write([]byte("$" + strconv.Itoa(len(tmpValue)) + "\r\n" + tmpValue + "\r\n"))
