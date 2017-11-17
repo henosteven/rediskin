@@ -79,11 +79,11 @@ func GetCommand(client Client) error{
 func SetCommand(client Client) error{
     conn := client.Conn
     argv := client.CommandArgv
-    conn.Write([]byte("$10\r\nsetcommand\r\n"))
     err := checkCommandProtocol(&client)
     if err != nil {
         return errors.New("command-error")
     }
+    conn.Write([]byte("$2\r\nok\r\n"))
     ServerInstance.Dict[argv[4]] = RedisObj{argv[6]}
     return nil
 }
@@ -91,40 +91,36 @@ func SetCommand(client Client) error{
 func LpushCommand(client Client) error {
     conn := client.Conn
     argv := client.CommandArgv
-    conn.Write([]byte("$12\r\nlpushcommand\r\n"))
     err := checkCommandProtocol(&client)
     if err != nil {
         return errors.New("command-error")
     }
-    //ls := ServerInstance.Dict[argv[4]]
-    //if ls == nil {
+    if _, ok := ServerInstance.Dict[argv[4]]; !ok {
         ls := list.New()
         ServerInstance.Dict[argv[4]] = RedisObj{ls}
-    //}
-    ls.PushBack(argv[6])
+    }
+    tmpls := ServerInstance.Dict[argv[4]].Value.(*list.List)
+    tmpls.PushBack(argv[6])
+    conn.Write([]byte("$2\r\nok\r\n"))
     return nil
 }
 
 func LpopCommand(client Client) error {
     conn := client.Conn
     argv := client.CommandArgv
-    conn.Write([]byte("$11\r\nlpopcommand\r\n"))
     err := checkCommandProtocol(&client)
     if err != nil {
         return errors.New("command-error")
     }
-    ls := ServerInstance.Dict[argv[4]]
-    fmt.Println(ls)
-    /*
-    if ls == nil {
+    if _, ok := ServerInstance.Dict[argv[4]]; !ok {
         conn.Write([]byte("$10\r\nempty-list\r\n"))
         return nil
     }
-    */
-    tmpValue := "henosteven"
+    ls := ServerInstance.Dict[argv[4]].Value.(*list.List)
+    tmpValue := ls.Back().Value.(string)
     conn.Write([]byte("$" + strconv.Itoa(len(tmpValue)) + "\r\n" + tmpValue + "\r\n"))
     return nil
 }
 
 var ServerInstance Server
-var CommandList = [3]Command{{"get", 1, GetCommand},{"set", 2, SetCommand},{"lpush", 2, LpushCommand}}
+var CommandList = [4]Command{{"get", 1, GetCommand},{"set", 2, SetCommand},{"lpush", 2, LpushCommand},{"lpop", 1, LpopCommand}}
