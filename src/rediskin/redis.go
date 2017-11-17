@@ -29,7 +29,7 @@ func initServer() {
         fmt.Println("toml.Unmarshal error ", err)
         panic("failed to parase conf file")
     }
-    server.ServerInstance.Dict = make(map[string]string)
+    server.ServerInstance.Dict = make(map[string]server.RedisObj)
     fmt.Println(server.ServerInstance)
 }
 

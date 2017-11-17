@@ -7,6 +7,10 @@ import (
     "fmt"
 )
 
+type RedisObj struct {
+    Value interface{}
+}
+
 type Client struct{
     IP string
     Port int
@@ -20,7 +24,8 @@ type Server struct {
     Port int
     Addr string
     ClientList []Client
-    Dict map[string]string
+    Dict map[string]RedisObj
+    ExpireDict map[string]int
 }
 
 type CommandProc func(client Client) error
@@ -40,7 +45,14 @@ func GetCommand(client Client) error{
         return errors.New("command-error")
     }
     resp := ServerInstance.Dict[argv[4]]
-    conn.Write([]byte("$" + strconv.Itoa(len(resp)) + "\r\n" + resp + "\r\n"))
+
+    //类型判定
+    tmpValue, ok := (resp.Value).(string)
+    if ok {
+        conn.Write([]byte("$12\r\ninvalid-type\r\n"))
+    } else {
+        conn.Write([]byte("$" + strconv.Itoa(len(tmpValue)) + "\r\n" + tmpValue + "\r\n"))
+    }
     return nil
 }
 
@@ -52,7 +64,7 @@ func SetCommand(client Client) error{
     if err != nil {
         return errors.New("command-error")
     }
-    ServerInstance.Dict[argv[4]] = argv[6]
+    ServerInstance.Dict[argv[4]] = RedisObj{argv[6]}
     return nil
 }
 
