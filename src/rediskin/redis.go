@@ -11,6 +11,7 @@ import(
     "github.com/BurntSushi/toml"
     "io/ioutil"
     "os"
+    "webserver"
 )
 
 func initServer() {
@@ -42,8 +43,13 @@ func createClient(conn net.Conn) server.Client {
 }
 
 func main() {
-    initServer()
     runtime.GOMAXPROCS(runtime.NumCPU())
+    initServer()
+    go webserver.StartWebServer()
+    startRedisServer()
+}
+
+func startRedisServer() {
     netListen, err := net.Listen("tcp", server.ServerInstance.Addr + ":" + strconv.Itoa(server.ServerInstance.Port)) 
     if (err != nil) {
         netListen.Close()
@@ -61,6 +67,7 @@ func main() {
         Log(conn.RemoteAddr().String(), " tcp connect success")
         go handleClient(client)
     }
+
 }
 
 func handleClient(client server.Client) {
