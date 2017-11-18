@@ -27,6 +27,7 @@ type Server struct {
     ClientList []Client
     Dict map[string]RedisObj
     ExpireDict map[string]int
+    Webport int
 }
 
 type CommandProc func(client Client) error

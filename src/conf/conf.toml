@@ -2,3 +2,5 @@
 Host = "localhost"
 #port
 Port = 1024
+#webserver-port
+Webport = 1008

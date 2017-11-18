@@ -31,7 +31,7 @@ func initServer() {
         panic("failed to parase conf file")
     }
     server.ServerInstance.Dict = make(map[string]server.RedisObj)
-    fmt.Println(server.ServerInstance)
+    server.ServerInstance.ExpireDict = make(map[string]int)
 }
 
 func createClient(conn net.Conn) server.Client {
@@ -67,7 +67,6 @@ func startRedisServer() {
         Log(conn.RemoteAddr().String(), " tcp connect success")
         go handleClient(client)
     }
-
 }
 
 func handleClient(client server.Client) {
