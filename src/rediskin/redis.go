@@ -11,6 +11,8 @@ import(
     "github.com/BurntSushi/toml"
     "io/ioutil"
     "os"
+    "os/signal"
+    "syscall"
     "webserver"
     "service"
 )
@@ -38,13 +40,21 @@ func initServer() {
 func createClient(conn net.Conn) server.Client {
     var client server.Client
     client.IP = conn.RemoteAddr().String()
-    client.Port = 1069
     client.Conn = conn
     return client
 }
 
 func main() {
     runtime.GOMAXPROCS(runtime.NumCPU())
+    
+    c := make(chan os.Signal, 1)
+    signal.Notify(c, os.Interrupt)
+    signal.Notify(c, syscall.SIGTERM)
+    go func() {
+        <-c
+        shutDown()
+    } ()
+
     initServer()
 
     service.Wg.Add(1)
@@ -54,6 +64,11 @@ func main() {
     go startRedisServer()
 
     service.Wg.Wait()
+}
+
+func shutDown() {
+    fmt.Println("~bye-bye~")
+    os.Exit()
 }
 
 func startRedisServer() {
