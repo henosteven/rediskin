@@ -5,11 +5,13 @@ import (
     "net/http"
     "server"
     "strconv"
+    "service"
 )
 
 func StartWebServer() {
+    defer service.Wg.Done()
     http.HandleFunc("/serverinfo", serverinfo)
-    err := http.ListenAndServe(":" . strconv.Itoa(server.ServerInstance.Webport), nil)
+    err := http.ListenAndServe(":" + strconv.Itoa(server.ServerInstance.Webport), nil)
     if err != nil {
         fmt.Println("failed to start webserver")
     }

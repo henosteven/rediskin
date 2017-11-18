@@ -12,6 +12,7 @@ import(
     "io/ioutil"
     "os"
     "webserver"
+    "service"
 )
 
 func initServer() {
@@ -45,11 +46,18 @@ func createClient(conn net.Conn) server.Client {
 func main() {
     runtime.GOMAXPROCS(runtime.NumCPU())
     initServer()
+
+    service.Wg.Add(1)
     go webserver.StartWebServer()
-    startRedisServer()
+
+    service.Wg.Add(1)
+    go startRedisServer()
+
+    service.Wg.Wait()
 }
 
 func startRedisServer() {
+    defer service.Wg.Done()
     netListen, err := net.Listen("tcp", server.ServerInstance.Addr + ":" + strconv.Itoa(server.ServerInstance.Port)) 
     if (err != nil) {
         netListen.Close()
