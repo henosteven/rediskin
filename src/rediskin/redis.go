@@ -67,8 +67,8 @@ func main() {
 }
 
 func shutDown() {
-    fmt.Println("~bye-bye~")
-    os.Exit()
+    fmt.Println("ctrl-c or SIGTERM found.~bye~bye~")
+    os.Exit(1)
 }
 
 func startRedisServer() {
