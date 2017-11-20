@@ -124,4 +124,9 @@ func LpopCommand(client Client) error {
 }
 
 var ServerInstance Server
-var CommandList = [4]Command{{"get", 1, GetCommand},{"set", 2, SetCommand},{"lpush", 2, LpushCommand},{"lpop", 1, LpopCommand}}
+var CommandList = [...]Command{
+    {"get", 1, GetCommand},
+    {"set", 2, SetCommand},
+    {"lpush", 2, LpushCommand},
+    {"lpop", 1, LpopCommand},
+}
