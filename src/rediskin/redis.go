@@ -8,6 +8,7 @@ import(
     "strconv"
     "strings"
     "errors"
+    "flag"
     "github.com/BurntSushi/toml"
     "io/ioutil"
     "os"
@@ -56,6 +57,10 @@ func main() {
     } ()
 
     initServer()
+    var port *int = flag.Int("port", 1024, "input port")
+    flag.Parse()
+    fmt.Println(*port)
+    server.ServerInstance.Port = *port
 
     service.Wg.Add(1)
     go webserver.StartWebServer()
@@ -128,6 +133,9 @@ func processInputBuffer(client server.Client) {
 
 func processCommand(command server.Command, client server.Client) {
     command.Proc(client)
+    if command.NeedProgate == 1 {
+        server.Progate()
+    }
 }
 
 func findCommand(command string, tmpList []string) (server.Command, error){

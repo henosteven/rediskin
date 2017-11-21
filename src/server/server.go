@@ -2,6 +2,7 @@ package server
 
 import (
     "net"
+    "bufio"
     "strconv"
     "errors"
     "fmt"
@@ -28,6 +29,10 @@ type Server struct {
     Dict map[string]RedisObj
     ExpireDict map[string]int
     Webport int
+    MasterAddr string
+    MasterPort int
+    Role uint8
+    SlaveList []Client
 }
 
 type CommandProc func(client Client) error
@@ -36,6 +41,7 @@ type Command struct {
     Name string
     Argc int
     Proc CommandProc 
+    NeedProgate uint8
 }
 
 func checkCommandProtocol(client *Client) error {
@@ -123,10 +129,55 @@ func LpopCommand(client Client) error {
     return nil
 }
 
+func SlaveofCommand(client Client) error {
+    conn := client.Conn
+    argv := client.CommandArgv
+    err := checkCommandProtocol(&client)
+    if err != nil {
+        return errors.New("command-error")
+    }
+    masterAddr := argv[4]
+    masterPort := argv[6]
+    go func(addr string, port string, conn net.Conn) error{
+        masterConn, err := net.Dial("tcp", addr + ":" + port)
+        if err != nil {
+           return errors.New("faile-to-connect-to-master")
+        }
+        fmt.Fprintf(masterConn, "$5\r\nslave\r\n")
+        for {
+            reader := bufio.NewReader(masterConn)
+            line, _, err := reader.ReadLine()
+            if err != nil {
+                fmt.Println("reader-from-master-error")
+            }
+            fmt.Println(line)
+            robj := RedisObj{"henosteven"}
+            ServerInstance.Dict["name"] = robj
+        }
+        return nil
+    }(masterAddr, masterPort, conn)
+    conn.Write([]byte("$15\r\nslave-of-master\r\n"))
+    return nil
+}
+
+func SlaveCommand(client Client) error {
+    ServerInstance.SlaveList = append(ServerInstance.SlaveList, client)
+    return nil
+}
+
+func Progate() error {
+    for _, client := range ServerInstance.SlaveList {
+        conn := client.Conn
+        conn.Write([]byte("$15\r\nget-from-master\r\n"))
+    }
+    return nil
+}
+
 var ServerInstance Server
 var CommandList = [...]Command{
-    {"get", 1, GetCommand},
-    {"set", 2, SetCommand},
-    {"lpush", 2, LpushCommand},
-    {"lpop", 1, LpopCommand},
+    {Name:"get",  Argc:1, Proc:GetCommand},
+    {Name:"set",  Argc:2, Proc:SetCommand, NeedProgate: 1},
+    {Name:"lpush",Argc:2, Proc:LpushCommand, NeedProgate: 1},
+    {Name:"lpop", Argc:1, Proc:LpopCommand},
+    {Name:"slaveof", Argc:2, Proc:SlaveofCommand},
 }
