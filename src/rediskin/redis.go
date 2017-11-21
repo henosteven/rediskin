@@ -57,9 +57,9 @@ func main() {
     } ()
 
     initServer()
+
     var port *int = flag.Int("port", 1024, "input port")
     flag.Parse()
-    fmt.Println(*port)
     server.ServerInstance.Port = *port
 
     service.Wg.Add(1)

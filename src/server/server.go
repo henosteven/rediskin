@@ -2,11 +2,11 @@ package server
 
 import (
     "net"
-    "bufio"
     "strconv"
     "errors"
     "fmt"
     "container/list"
+    "strings"
 )
 
 type RedisObj struct {
@@ -143,15 +143,18 @@ func SlaveofCommand(client Client) error {
         if err != nil {
            return errors.New("faile-to-connect-to-master")
         }
-        fmt.Fprintf(masterConn, "$5\r\nslave\r\n")
+        fmt.Fprintf(masterConn, "*1\r\n$5\r\nslave\r\n")
         for {
-            reader := bufio.NewReader(masterConn)
-            line, _, err := reader.ReadLine()
+            tmpBuffer := make([]byte, 1024)
+            _, err := masterConn.Read(tmpBuffer)
             if err != nil {
                 fmt.Println("reader-from-master-error")
+                return err
             }
-            fmt.Println(line)
-            robj := RedisObj{"henosteven"}
+            tmp := string(tmpBuffer)
+            tmpArgv := strings.Split(tmp, "\r\n")
+            fmt.Println("======", tmpArgv)
+            robj := RedisObj{string(tmpArgv[1])}
             ServerInstance.Dict["name"] = robj
         }
         return nil
@@ -161,7 +164,9 @@ func SlaveofCommand(client Client) error {
 }
 
 func SlaveCommand(client Client) error {
+    conn := client.Conn
     ServerInstance.SlaveList = append(ServerInstance.SlaveList, client)
+    conn.Write([]byte("$11\r\nsendtoslave\r\n"))
     return nil
 }
 
@@ -180,4 +185,5 @@ var CommandList = [...]Command{
     {Name:"lpush",Argc:2, Proc:LpushCommand, NeedProgate: 1},
     {Name:"lpop", Argc:1, Proc:LpopCommand},
     {Name:"slaveof", Argc:2, Proc:SlaveofCommand},
+    {Name:"slave", Argc:0, Proc:SlaveCommand},
 }
