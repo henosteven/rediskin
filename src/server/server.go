@@ -68,7 +68,7 @@ func GetCommand(client Client) error{
     argv := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     resp := ServerInstance.Dict[argv[4]]
 
@@ -87,7 +87,7 @@ func SetCommand(client Client) error{
     argv := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     ServerInstance.Dict[argv[4]] = createRedisObj(argv[6])
     responseOK(conn)
@@ -99,7 +99,7 @@ func LpushCommand(client Client) error {
     argv := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     if _, ok := ServerInstance.Dict[argv[4]]; !ok {
         ls := list.New()
@@ -116,7 +116,7 @@ func LpopCommand(client Client) error {
     argv := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     if _, ok := ServerInstance.Dict[argv[4]]; !ok {
         responseNil(conn)
@@ -133,7 +133,7 @@ func SlaveofCommand(client Client) error {
     argv := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     masterAddr := argv[4]
     masterPort := argv[6]
@@ -174,7 +174,7 @@ func HSetCommand(client Client) error {
     argv  := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     key := argv[4]
     field := argv[6]
@@ -198,7 +198,7 @@ func HGetCommand(client Client) error {
     argv  := client.CommandArgv
     err := checkCommandProtocol(&client)
     if err != nil {
-        return errors.New("command-error")
+        return err
     }
     key := argv[4]
     field := argv[6]
