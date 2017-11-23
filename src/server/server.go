@@ -74,11 +74,10 @@ func GetCommand(client Client) error{
 
     //类型判定
     tmpValue, ok := (resp.Value).(string)
-    fmt.Println(tmpValue, ok)
     if !ok {
-        conn.Write([]byte("$12\r\ninvalid-type\r\n"))
+        responseNil(conn)
     } else {
-        conn.Write([]byte("$" + strconv.Itoa(len(tmpValue)) + "\r\n" + tmpValue + "\r\n"))
+        responseValue(tmpValue, conn)
     }
     return nil
 }
@@ -90,8 +89,8 @@ func SetCommand(client Client) error{
     if err != nil {
         return errors.New("command-error")
     }
-    conn.Write([]byte("$2\r\nok\r\n"))
-    ServerInstance.Dict[argv[4]] = RedisObj{argv[6]}
+    ServerInstance.Dict[argv[4]] = createRedisObj(argv[6])
+    responseOK(conn)
     return nil
 }
 
@@ -104,11 +103,11 @@ func LpushCommand(client Client) error {
     }
     if _, ok := ServerInstance.Dict[argv[4]]; !ok {
         ls := list.New()
-        ServerInstance.Dict[argv[4]] = RedisObj{ls}
+        ServerInstance.Dict[argv[4]] = createRedisObj(ls)
     }
     tmpls := ServerInstance.Dict[argv[4]].Value.(*list.List)
     tmpls.PushBack(argv[6])
-    conn.Write([]byte("$2\r\nok\r\n"))
+    responseOK(conn)
     return nil
 }
 
@@ -120,12 +119,12 @@ func LpopCommand(client Client) error {
         return errors.New("command-error")
     }
     if _, ok := ServerInstance.Dict[argv[4]]; !ok {
-        conn.Write([]byte("$10\r\nempty-list\r\n"))
-        return nil
+        responseNil(conn)
+    } else {
+        ls := ServerInstance.Dict[argv[4]].Value.(*list.List)
+        tmpValue := ls.Back().Value.(string)
+        responseValue(tmpValue, conn)
     }
-    ls := ServerInstance.Dict[argv[4]].Value.(*list.List)
-    tmpValue := ls.Back().Value.(string)
-    conn.Write([]byte("$" + strconv.Itoa(len(tmpValue)) + "\r\n" + tmpValue + "\r\n"))
     return nil
 }
 
@@ -154,7 +153,7 @@ func SlaveofCommand(client Client) error {
             tmp := string(tmpBuffer)
             tmpArgv := strings.Split(tmp, "\r\n")
             fmt.Println("======", tmpArgv)
-            robj := RedisObj{string(tmpArgv[1])}
+            robj := createRedisObj(string(tmpArgv[1]))
             ServerInstance.Dict["name"] = robj
         }
         return nil
@@ -170,6 +169,55 @@ func SlaveCommand(client Client) error {
     return nil
 }
 
+func HSetCommand(client Client) error {
+    conn := client.Conn
+    argv  := client.CommandArgv
+    err := checkCommandProtocol(&client)
+    if err != nil {
+        return errors.New("command-error")
+    }
+    key := argv[4]
+    field := argv[6]
+    value := argv[8]
+    
+    var curMap map[string]string
+    tmpMap, ok := ServerInstance.Dict[key]
+    if (!ok) {
+        curMap = make(map[string]string)
+    } else {
+        curMap, _ = tmpMap.Value.(map[string]string)
+    }
+    curMap[field] = value
+    ServerInstance.Dict[key] = createRedisObj(curMap)
+    responseOK(conn)
+    return nil
+}
+
+func HGetCommand(client Client) error {
+    conn := client.Conn
+    argv  := client.CommandArgv
+    err := checkCommandProtocol(&client)
+    if err != nil {
+        return errors.New("command-error")
+    }
+    key := argv[4]
+    field := argv[6]
+
+    tmpMap, ok := ServerInstance.Dict[key]
+    if (!ok) {
+        responseNil(conn)
+    } else {
+        tmpObj, tok := tmpMap.Value.(map[string]string)
+        tmpValue := tmpObj[field]
+        if tok {
+            responseValue(tmpValue, conn)
+        } else {
+            responseNil(conn)
+        }
+    }
+    return nil
+}
+
 func Progate() error {
     for _, client := range ServerInstance.SlaveList {
         conn := client.Conn
@@ -178,10 +226,33 @@ func Progate() error {
     return nil
 }
 
+func createRedisObj(v interface{}) RedisObj {
+    var obj RedisObj
+    obj.Value = v
+    return obj
+}
+
+func responseOK(conn net.Conn) error {
+    conn.Write([]byte("$2\r\nok\r\n"))
+    return nil
+}
+
+func responseNil(conn net.Conn) error {
+    conn.Write([]byte("$3\r\nnil\r\n"))
+    return nil
+}
+
+func responseValue(str string, conn net.Conn) error {
+    conn.Write([]byte("$" + strconv.Itoa(len(str)) + "\r\n" + str+ "\r\n"))
+    return nil
+}
+
 var ServerInstance Server
 var CommandList = [...]Command{
     {Name:"get",  Argc:1, Proc:GetCommand},
     {Name:"set",  Argc:2, Proc:SetCommand, NeedProgate: 1},
+    {Name:"hget",  Argc:2, Proc:HGetCommand},
+    {Name:"hset",  Argc:3, Proc:HSetCommand, NeedProgate: 1},
     {Name:"lpush",Argc:2, Proc:LpushCommand, NeedProgate: 1},
     {Name:"lpop", Argc:1, Proc:LpopCommand},
     {Name:"slaveof", Argc:2, Proc:SlaveofCommand},
