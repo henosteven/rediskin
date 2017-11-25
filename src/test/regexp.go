@@ -27,4 +27,13 @@ func main() {
 
     fmt.Println(re.FindSubmatch([]byte("i~hello heno steven"))) //[[104 101 108 108 111] [101 108 108]]
     fmt.Println(re.FindStringSubmatch("i~hello heno steven")) //[hello ell]
+
+    fmt.Println(re.FindAllSubmatch([]byte("i~hello heno steven"), -1)) //[[[104 101 108 108 111] [101 108 108]] [[104 101 110 111] [101 110]]]
+    fmt.Println(re.FindAllStringSubmatch("i~hello heno steven", -1)) //[[hello ell] [heno en]]
+
+    fmt.Println(re.FindSubmatchIndex([]byte("i~hello heno steven"))) //[2 7 3 6]
+    fmt.Println(re.FindAllSubmatchIndex([]byte("i~hello heno steven"), -1)) //[[2 7 3 6] [8 12 9 11]]
+
+    fmt.Println(re.FindStringSubmatchIndex("i~hello heno steven")) //[2 7 3 6]
+    fmt.Println(re.FindAllStringSubmatchIndex("i~hello heno steven", -1)) //[[2 7 3 6] [8 12 9 11]]
 }
