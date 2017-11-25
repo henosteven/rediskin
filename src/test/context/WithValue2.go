@@ -47,5 +47,8 @@ func h(w http.ResponseWriter, req *http.Request) {
 
 func main() {
     http.Handle("/", middleWare(http.HandlerFunc(h)))
-    http.ListenAndServe(":9092", nil)
+    err := http.ListenAndServe(":9092", nil)
+    if err != nil {
+        
+    }
 }
