@@ -13,13 +13,19 @@ import (
     "os"
     "os/signal"
     "syscall"
+    "flag"
 )
 
 var (
     wg sync.WaitGroup
+    host *string
+    port *string
 )
 
 func main() {
+
+    host = flag.String("host", "127.0.0.1", "listen host")
+    port = flag.String("port", "6366", "listen port")
     
     ctx, cancel := context.WithCancel(context.Background())
 
@@ -43,7 +49,7 @@ func startServer(ctx context.Context) {
     defer wg.Done()
     fmt.Println("ready to start  webserver")
     http.HandleFunc("/", Index)
-    err := http.ListenAndServe(":6366", nil)
+    err := http.ListenAndServe(*host + ":" + *port, nil)
     if err != nil {
         fmt.Println("failed to start web server:", err)
     }
