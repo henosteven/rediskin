@@ -49,6 +49,10 @@ func startServer(ctx context.Context) {
     defer wg.Done()
     fmt.Println("ready to start  webserver")
     http.HandleFunc("/", Index)
+
+    //&{{{0 0} 0 0 0 0} map[/:{true 0x1215c20 /} :{false 0xc42011e000 /}] false}
+    fmt.Println(http.DefaultServeMux)
+
     err := http.ListenAndServe(*host + ":" + *port, nil)
     if err != nil {
         fmt.Println("failed to start web server:", err)
