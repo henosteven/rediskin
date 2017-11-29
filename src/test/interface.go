@@ -2,10 +2,11 @@ package main
 
 import (
     "fmt"
+    "math"
 )
 
 type Shape interface {
-    Area() int
+    Area() interface{}
     Display()  
 }
 
@@ -14,7 +15,7 @@ type Rect struct {
     Y int
 }
 
-func (rect *Rect) Area() int {
+func (rect *Rect) Area() interface{} {
     return rect.X * rect.Y
 }
 
@@ -26,8 +27,8 @@ type Round struct {
     R int
 }
 
-func (round *Round) Area() int {
-    return round.R * round.R * 314
+func (round *Round) Area() interface{} {
+    return round.R * round.R * int(math.Pi)
 }
 
 func (round *Round) Display() {
