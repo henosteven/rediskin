@@ -5,21 +5,59 @@ import (
     "fmt"
     "reflect"
     "context"
+    "os"
+    "os/exec"
+    "os/signal"
+    "syscall"
+    "log"
+    "strconv"
+    "sync"
 )
 
-func index(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "hello server")
+func index(w http.ResponseWriter, r *http.Request) {    
+    pid := int64(syscall.Getpid())
+    fmt.Fprintf(w, "hello server~ webotherway" + strconv.FormatInt(pid, 10))
     fmt.Println(r.Context())
 }
 
+func handleSigHook(sig os.Signal) {
+    log.Println("ready to start new web server")
+    server.Close()
+    cmd := exec.Command("go", "run", "webotherway.go")
+    err := cmd.Start()
+    if err != nil {
+        log.Fatal("fatal to run go run webotherway.go")
+    } else {
+        log.Fatal("good~ tell the parent to exit")
+        wg.Done()
+    }
+}
+
+var (
+    server http.Server
+    wg sync.WaitGroup
+)
+
 func main() {
+    
+    wg.Add(1)
+    ch := make(chan os.Signal)
+    signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+    go func() {
+        sig := <-ch
+        handleSigHook(sig)
+    }()
+
     serveMux := http.NewServeMux()
     serveMux.HandleFunc("/", index)
     fmt.Println(reflect.TypeOf(serveMux)) //*http.ServeMux
     
     newServeMux := middleWare(serveMux)
-    server := http.Server{Addr: ":8080", Handler:newServeMux}
-    server.ListenAndServe()
+    server = http.Server{Addr: ":8080", Handler:newServeMux}
+    go server.ListenAndServe()
+
+    wg.Wait()
+    
 }
 
 func middleWare(next http.Handler) http.Handler {
