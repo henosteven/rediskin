@@ -9,7 +9,7 @@ func main() {
         a = iota
         b
         c = "heno"
-        d //会延续上一个的操作
+        d //会延续上一个的操作oo
         e = iota
         f
     )
