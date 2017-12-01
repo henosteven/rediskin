@@ -13,6 +13,7 @@ import (
     "os/exec"
     "flag"
     "strconv"
+    "time"
 )
 
 var (
@@ -131,5 +132,6 @@ func main() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
+    time.Sleep(time.Second * 10)
     fmt.Fprintf(w, "hello~graceful~server" + strconv.FormatInt(int64(syscall.Getpid()), 10))
 }
