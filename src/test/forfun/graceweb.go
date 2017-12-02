@@ -132,6 +132,6 @@ func main() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-    time.Sleep(time.Second * 10)
+    time.Sleep(time.Second * 1)
     fmt.Fprintf(w, "hello~graceful~server" + strconv.FormatInt(int64(syscall.Getpid()), 10))
 }
