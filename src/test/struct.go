@@ -8,7 +8,8 @@ import (
 You can only declare a method with a receiver whose type is defined in the same package as the method. You cannot declare a method with a receiver whose type is defined in another package (which includes the built-in types such as int).
 
 只能为本包之内的类型申明函数，不能为非本包内的类型包括内建类型申明函数
-
+也可以认为，不能为其他包里的类型申明函数, 理论上来讲，这样会破坏其他包的结构
+包应该是作为一个独立的功能聚集存在，不能跟其他包互动产生新的性能属性
 cannot define new methods on non-local type int
 func (i int) test() {
 }
@@ -26,6 +27,7 @@ func (u *User) DisplayName() {
 func (u *User) SetAge(age int) {
     u.Age = age
 }
+
 
 /*
 With a value receiver, the Scale method operates on a copy of the original Vertex value. (This is the same behavior as for any other function argument.)
