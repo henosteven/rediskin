@@ -43,6 +43,7 @@ func newGracefulListener(l net.Listener) (gl *gracefulListener) {
     gl = &gracefulListener{Listener: l, stop: make(chan error)}
     go func() {
         _ = <-gl.stop
+        fmt.Println("recevie from chanel to stop")
         gl.stopped = true
         gl.stop <- gl.Listener.Close()
     }()
@@ -50,9 +51,11 @@ func newGracefulListener(l net.Listener) (gl *gracefulListener) {
 }
 
 func (gl *gracefulListener) Close() error {
+    fmt.Println("Close called")
     if gl.stopped {
         return syscall.EINVAL
     }
+    fmt.Println("write nil to stop")
     gl.stop <- nil
     return <-gl.stop
 }
@@ -78,21 +81,34 @@ func main() {
 
     ch := make(chan os.Signal, 1)
     signal.Notify(ch, syscall.SIGTERM)
+    signal.Notify(ch, syscall.SIGHUP)
     signal.Notify(ch, syscall.SIGINT)
     go func() {
-        <-ch
-        file := netListener.File() // this returns a Dup()
-        args := []string{
-            "-graceful"}
+        sig := <-ch
+        switch sig { 
+            case syscall.SIGHUP:
+                fmt.Println("receive SIGHUP")
+                file := netListener.File() // this returns a Dup()
+                args := []string{
+                    "-graceful"}
 
-        cmd := exec.Command("./graceweb", args...)
-        cmd.Stdout = os.Stdout
-        cmd.Stderr = os.Stderr
-        cmd.ExtraFiles = []*os.File{file}
+                cmd := exec.Command("./graceweb", args...)
+                cmd.Stdout = os.Stdout
+                cmd.Stderr = os.Stderr
+                cmd.ExtraFiles = []*os.File{file}
 
-        err := cmd.Start()
-        if err != nil {
-            log.Fatalf("gracefulRestart: Failed to launch, error: %v", err)
+                err := cmd.Start()
+                if err != nil {
+                    log.Fatalf("gracefulRestart: Failed to launch, error: %v", err)
+                }
+            case syscall.SIGINT:
+                fmt.Println("receive SIGINT")
+                netListener.Close()
+                fmt.Println("stop listening ~ ")
+            case syscall.SIGTERM:
+                fmt.Println("receive SIGTERM")
+                netListener.Close()
+                fmt.Println("stop listening ~ ")
         }
     } ()
     
@@ -129,6 +145,8 @@ func main() {
 
     netListener = newGracefulListener(l)
     server.Serve(netListener)
+    log.Println("waitting for connection to finish...")
+    httpWg.Wait()
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
