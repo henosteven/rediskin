@@ -40,7 +40,13 @@ func main() {
     defer func() {
         ml.Close()
     }()
+    
+    //ml.Close()
 
-    conn, _ := ml.Accept()
+    var conn net.Conn
+    conn, err = ml.Accept()
+    if err != nil {
+        fmt.Println(err)
+    }
     fmt.Println(reflect.TypeOf(conn))
 }
