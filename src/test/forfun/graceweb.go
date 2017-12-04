@@ -138,9 +138,16 @@ func main() {
     }
 
     if gracefulChild {
+    /*
         parent := syscall.Getppid()
         log.Printf("main: Killing parent pid: %v", parent)
-        syscall.Kill(parent, syscall.SIGTERM)
+        err := syscall.Kill(parent, syscall.SIGTERM)
+        fmt.Println(err)
+        */
+        process, err := os.FindProcess(os.Getppid())
+        fmt.Println(err)
+        err = process.Kill()
+        fmt.Println(err)
     }    
 
     netListener = newGracefulListener(l)
@@ -150,6 +157,6 @@ func main() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-    time.Sleep(time.Second * 1)
+    time.Sleep(time.Second * 20)
     fmt.Fprintf(w, "hello~graceful~server" + strconv.FormatInt(int64(syscall.Getpid()), 10))
 }
