@@ -154,6 +154,7 @@ func main() {
     server.Serve(netListener)
     log.Println("waitting for connection to finish...")
     httpWg.Wait()
+    log.Println("add connection finished , bye~bye~")
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
