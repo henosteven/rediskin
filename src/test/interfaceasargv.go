@@ -1,27 +1,27 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 )
 
 type Listener interface {
-    Accept()
-    ShowListenedList()
+	Accept()
+	ShowListenedList()
 }
 
 type HenoListener struct {
-    Listener
+	Listener
 }
 
-func (h HenoListener) ShowListenedList () {
-    fmt.Println("just show HenoListener")
+func (h HenoListener) ShowListenedList() {
+	fmt.Println("just show HenoListener")
 }
 
 func Job(l Listener) {
-    l.ShowListenedList()
+	l.ShowListenedList()
 }
 
 func main() {
-    hl := HenoListener{}
-    Job(hl)
+	hl := HenoListener{}
+	Job(hl)
 }
