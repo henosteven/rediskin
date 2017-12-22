@@ -7,6 +7,9 @@ import (
 )
 
 func main() {
+    fmt.Println(int64(time.Second/time.Millisecond)) //1000
+    fmt.Println(time.Duration(10) * time.Second) //10s
+    fmt.Println(time.Duration(100000000000).Minutes()) //1.6666666666666665
     
     //time-> Now() Unix() Parse() -> time.Time->Unix() UnixNano() Format()
     //Now()
