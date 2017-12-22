@@ -43,7 +43,6 @@ func newGracefulListener(l net.Listener) (gl *gracefulListener) {
     gl = &gracefulListener{Listener: l, stop: make(chan error)}
     go func() {
         _ = <-gl.stop
-        fmt.Println("recevie from chanel to stop")
         gl.stopped = true
         gl.stop <- gl.Listener.Close()
     }()
@@ -51,11 +50,9 @@ func newGracefulListener(l net.Listener) (gl *gracefulListener) {
 }
 
 func (gl *gracefulListener) Close() error {
-    fmt.Println("Close called")
     if gl.stopped {
         return syscall.EINVAL
     }
-    fmt.Println("write nil to stop")
     gl.stop <- nil
     return <-gl.stop
 }
@@ -81,34 +78,21 @@ func main() {
 
     ch := make(chan os.Signal, 1)
     signal.Notify(ch, syscall.SIGTERM)
-    signal.Notify(ch, syscall.SIGHUP)
     signal.Notify(ch, syscall.SIGINT)
     go func() {
-        sig := <-ch
-        switch sig { 
-            case syscall.SIGHUP:
-                fmt.Println("receive SIGHUP")
-                file := netListener.File() // this returns a Dup()
-                args := []string{
-                    "-graceful"}
+        <-ch
+        file := netListener.File() // this returns a Dup()
+        args := []string{
+            "-graceful"}
 
-                cmd := exec.Command("./graceweb", args...)
-                cmd.Stdout = os.Stdout
-                cmd.Stderr = os.Stderr
-                cmd.ExtraFiles = []*os.File{file}
+        cmd := exec.Command("./graceweb", args...)
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+        cmd.ExtraFiles = []*os.File{file}
 
-                err := cmd.Start()
-                if err != nil {
-                    log.Fatalf("gracefulRestart: Failed to launch, error: %v", err)
-                }
-            case syscall.SIGINT:
-                fmt.Println("receive SIGINT")
-                netListener.Close()
-                fmt.Println("stop listening ~ ")
-            case syscall.SIGTERM:
-                fmt.Println("receive SIGTERM")
-                netListener.Close()
-                fmt.Println("stop listening ~ ")
+        err := cmd.Start()
+        if err != nil {
+            log.Fatalf("gracefulRestart: Failed to launch, error: %v", err)
         }
     } ()
     
@@ -138,26 +122,16 @@ func main() {
     }
 
     if gracefulChild {
-    /*
         parent := syscall.Getppid()
         log.Printf("main: Killing parent pid: %v", parent)
-        err := syscall.Kill(parent, syscall.SIGTERM)
-        fmt.Println(err)
-        */
-        process, err := os.FindProcess(os.Getppid())
-        fmt.Println(err)
-        err = process.Kill()
-        fmt.Println(err)
+        syscall.Kill(parent, syscall.SIGTERM)
     }    
 
     netListener = newGracefulListener(l)
     server.Serve(netListener)
-    log.Println("waitting for connection to finish...")
-    httpWg.Wait()
-    log.Println("add connection finished , bye~bye~")
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-    time.Sleep(time.Second * 20)
+    time.Sleep(time.Second * 1)
     fmt.Fprintf(w, "hello~graceful~server" + strconv.FormatInt(int64(syscall.Getpid()), 10))
 }
