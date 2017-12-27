@@ -11,7 +11,7 @@ func TestAdd(t *testing.T) {
         in1, in2, want int
     } {
         {-1, 1, 0},
-        {100, 1, 10}, //弄一个错误试试
+        //{100, 1, 10}, //弄一个错误试试
     }
     for _, c := range cases {
         got := Add(c.in1, c.in2)
